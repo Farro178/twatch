@@ -1,8 +1,8 @@
 import React from "react";
-
+import { connect } from "react-redux";
+import { signIn, signOut } from "../actions";
 class GoogleAuth extends React.Component {
   // this value begins as null because we don't know if the user is signed in already.
-  state = { isSignedIn: null };
 
   componentDidMount() {
     // second argument is a callback to let the component know when the library load has been complete.
@@ -18,14 +18,19 @@ class GoogleAuth extends React.Component {
         .then(() => {
           this.auth = window.gapi.auth2.getAuthInstance();
           // Once a user is logged in we want to update the component to display that. For that we use in component state.
-          this.setState({ isSignedIn: this.auth.isSignedIn.get() });
+          // this.setState({ isSignedIn: this.auth.isSignedIn.get() });
+          this.onAuthChange(this.auth.isSignedIn.get());
           this.auth.isSignedIn.listen(this.onAuthChange);
         });
     });
   }
 
-  onAuthChange = () => {
-    this.setState({ isSignedIn: this.auth.isSignedIn.get() });
+  onAuthChange = (isSignedIn) => {
+    if (isSignedIn) {
+      this.props.signIn();
+    } else {
+      this.props.signOut();
+    }
   };
 
   onSignIn = () => {
@@ -37,9 +42,9 @@ class GoogleAuth extends React.Component {
   };
 
   renderAuthButton() {
-    if (this.state.isSignedIn === null) {
+    if (this.props.isSignedIn === null) {
       return null;
-    } else if (this.state.isSignedIn) {
+    } else if (this.props.isSignedIn) {
       return (
         <button onClick={this.onSignOut} className="ui red google button">
           <i className="google icon" />
@@ -61,4 +66,8 @@ class GoogleAuth extends React.Component {
   }
 }
 
-export default GoogleAuth;
+const mapStateToProps = (state) => {
+  return { isSignedIn: state.auth.isSignedIn };
+};
+
+export default connect(null, { signIn, signOut })(GoogleAuth);
